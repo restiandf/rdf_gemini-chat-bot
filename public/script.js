@@ -121,6 +121,10 @@ fileInput.addEventListener('change', async () => {
 
     if (response.ok) {
       appendMessage('bot', data.result);
+    } else if (response.status === 429) {
+      appendMessage('bot', '⚠️ ' + (data.message || 'Kuota harian AI telah habis. Silakan coba lagi besok.'));
+    } else if (response.status === 503) {
+      appendMessage('bot', '😔 ' + (data.message || 'Layanan AI sedang sibuk. Silakan coba lagi sebentar lagi.'));
     } else {
       appendMessage('bot', 'Error: ' + (data.message || 'Terjadi kesalahan'));
     }
@@ -159,6 +163,10 @@ form.addEventListener('submit', async function (e) {
 
       if (response.ok) {
         appendMessage('bot', data.result);
+      } else if (response.status === 429) {
+        appendMessage('bot', '⚠️ ' + (data.message || 'Kuota harian AI telah habis. Silakan coba lagi besok.'));
+      } else if (response.status === 503) {
+        appendMessage('bot', '😔 ' + (data.message || 'Layanan AI sedang sibuk. Silakan coba lagi sebentar lagi.'));
       } else {
         appendMessage('bot', 'Error: ' + (data.message || 'Terjadi kesalahan'));
       }

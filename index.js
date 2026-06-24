@@ -34,7 +34,13 @@ app.post('/generate-text', async (req, res) => {
         res.status(200).json({ result: response.text });
     } catch (e) {
         console.log(e);
-        res.status(500).json({ message: e.message });
+        if (e.status === 429 || e.message?.includes('quota') || e.message?.includes('RESOURCE_EXHAUSTED')) {
+            res.status(429).json({ message: 'Kuota harian AI telah habis. Silakan coba lagi besok atau upgrade paket Anda.' });
+        } else if (e.status === 503 || e.message?.includes('high demand') || e.message?.includes('UNAVAILABLE')) {
+            res.status(503).json({ message: 'Maaf, layanan AI sedang sibuk. Silakan coba lagi dalam beberapa detik.' });
+        } else {
+            res.status(500).json({ message: e.message || 'Terjadi kesalahan pada server.' });
+        }
     }
 });
 
@@ -59,7 +65,13 @@ app.post('/generate-from-image', upload.single('image'), async (req, res) => {
         res.status(200).json({ result: response.text });
     } catch (e) {
         console.log(e);
-        res.status(500).json({ message: e.message });
+        if (e.status === 429 || e.message?.includes('quota') || e.message?.includes('RESOURCE_EXHAUSTED')) {
+            res.status(429).json({ message: 'Kuota harian AI telah habis. Silakan coba lagi besok atau upgrade paket Anda.' });
+        } else if (e.status === 503 || e.message?.includes('high demand') || e.message?.includes('UNAVAILABLE')) {
+            res.status(503).json({ message: 'Maaf, layanan AI sedang sibuk. Silakan coba lagi dalam beberapa detik.' });
+        } else {
+            res.status(500).json({ message: e.message || 'Terjadi kesalahan pada server.' });
+        }
     }
 });
 
@@ -88,7 +100,13 @@ app.post('/generate-from-document', upload.single('document'), async (req, res) 
         res.status(200).json({ result: response.text });
     } catch (e) {
         console.log(e);
-        res.status(500).json({ message: e.message });
+        if (e.status === 429 || e.message?.includes('quota') || e.message?.includes('RESOURCE_EXHAUSTED')) {
+            res.status(429).json({ message: 'Kuota harian AI telah habis. Silakan coba lagi besok atau upgrade paket Anda.' });
+        } else if (e.status === 503 || e.message?.includes('high demand') || e.message?.includes('UNAVAILABLE')) {
+            res.status(503).json({ message: 'Maaf, layanan AI sedang sibuk. Silakan coba lagi dalam beberapa detik.' });
+        } else {
+            res.status(500).json({ message: e.message || 'Terjadi kesalahan pada server.' });
+        }
     }
 });
 
@@ -117,7 +135,13 @@ app.post('/generate-from-audio', upload.single('audio'), async (req, res) => {
         res.status(200).json({ result: response.text });
     } catch (e) {
         console.log(e);
-        res.status(500).json({ message: e.message });
+        if (e.status === 429 || e.message?.includes('quota') || e.message?.includes('RESOURCE_EXHAUSTED')) {
+            res.status(429).json({ message: 'Kuota harian AI telah habis. Silakan coba lagi besok atau upgrade paket Anda.' });
+        } else if (e.status === 503 || e.message?.includes('high demand') || e.message?.includes('UNAVAILABLE')) {
+            res.status(503).json({ message: 'Maaf, layanan AI sedang sibuk. Silakan coba lagi dalam beberapa detik.' });
+        } else {
+            res.status(500).json({ message: e.message || 'Terjadi kesalahan pada server.' });
+        }
     }
 });
 
