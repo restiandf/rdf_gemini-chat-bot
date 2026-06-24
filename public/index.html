@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Chatbot AI menggunakan Gemini Flash API" />
+    <title>Gemini AI Chatbot</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div class="app">
+      <div class="sidebar-overlay" id="sidebar-overlay"></div>
+      <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+          <div class="logo">
+            <span class="logo-icon">✨</span>
+            <span class="logo-text">Delisa Chat</span>
+          </div>
+        </div>
+
+        <nav class="room-list">
+          <button class="room-item active" data-room="general">
+            <span class="room-icon">💬</span>
+            <div class="room-info">
+              <span class="room-name">Chat Umum</span>
+              <span class="room-status">Online</span>
+            </div>
+          </button>
+
+          <button class="room-item" data-room="image">
+            <span class="room-icon">🖼️</span>
+            <div class="room-info">
+              <span class="room-name">Analisis Gambar</span>
+              <span class="room-status">AI siap</span>
+            </div>
+          </button>
+
+          <button class="room-item" data-room="document">
+            <span class="room-icon">📄</span>
+            <div class="room-info">
+              <span class="room-name">Ringkasan Dokumen</span>
+              <span class="room-status">AI siap</span>
+            </div>
+          </button>
+
+          <button class="room-item" data-room="audio">
+            <span class="room-icon">🎵</span>
+            <div class="room-info">
+              <span class="room-name">Transkrip Audio</span>
+              <span class="room-status">AI siap</span>
+            </div>
+          </button>
+        </nav>
+
+        <div class="sidebar-footer">
+          <div class="user-profile">
+            <div class="avatar">U</div>
+            <div class="user-info">
+              <span class="user-name">User</span>
+              <span class="user-status">Aktif</span>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      <main class="chat-area">
+        <header class="chat-header">
+          <button class="icon-btn hamburger" id="hamburger" title="Menu" aria-label="Toggle menu">
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <line x1="3" y1="12" x2="21" y2="12"></line>
+              <line x1="3" y1="6" x2="21" y2="6"></line>
+              <line x1="3" y1="18" x2="21" y2="18"></line>
+            </svg>
+          </button>
+          <div class="chat-title">
+            <span class="chat-icon">💬</span>
+            <div>
+              <h2 id="room-title">Chat Umum</h2>
+              <p class="chat-subtitle" id="room-subtitle">Tanya apa saja, AI akan menjawab</p>
+            </div>
+          </div>
+          <div class="chat-actions">
+            <button class="icon-btn" id="clear-chat" title="Hapus chat">
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path d="M3 6h18"></path>
+                <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>
+                <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
+              </svg>
+            </button>
+          </div>
+        </header>
+
+        <div id="chat-box" class="chat-box" role="log" aria-live="polite">
+          <div class="welcome-message">
+            <div class="welcome-avatar">✨</div>
+            <div class="welcome-content">
+              <h3>Selamat datang di Gemini AI Chatbot!</h3>
+              <p>
+                Saya adalah asisten AI yang siap membantu Anda. Silakan tanyakan apa saja, dan saya
+                akan berusaha memberikan jawaban terbaik.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <form id="chat-form" class="chat-form">
+          <input type="file" id="file-input" hidden />
+          <button type="button" id="upload-btn" class="icon-btn" title="Upload file">
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="17 8 12 3 7 8"></polyline>
+              <line x1="12" y1="3" x2="12" y2="15"></line>
+            </svg>
+          </button>
+          <div class="input-wrapper">
+            <input
+              type="text"
+              id="user-input"
+              placeholder="Ketik pesan Anda..."
+              autocomplete="off"
+              required
+              aria-label="Pesan"
+            />
+          </div>
+          <button type="submit" id="send-btn" class="send-btn">
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <line x1="22" y1="2" x2="11" y2="13"></line>
+              <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+            </svg>
+            <span>Kirim</span>
+          </button>
+        </form>
+      </main>
+    </div>
+
+    <script src="script.js"></script>
+  </body>
+</html>
