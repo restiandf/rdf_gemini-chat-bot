@@ -27,8 +27,6 @@
 body {
   font-family: 'Inter', Arial, sans-serif;
   background-color: var(--bg);
-  margin: 0;
-  padding: 0;
   height: 100vh;
   height: 100dvh;
   overflow: hidden;
@@ -66,6 +64,8 @@ body {
 }
 
 .logo-icon {
+  display: flex;
+  align-items: center;
   font-size: 1.5rem;
 }
 
@@ -109,6 +109,8 @@ body {
 }
 
 .room-icon {
+  display: flex;
+  align-items: center;
   font-size: 1.3rem;
   flex-shrink: 0;
 }
@@ -198,6 +200,8 @@ body {
 }
 
 .chat-icon {
+  display: flex;
+  align-items: center;
   font-size: 1.5rem;
 }
 
@@ -216,7 +220,31 @@ body {
 
 .chat-actions {
   display: flex;
+  align-items: center;
   gap: 8px;
+}
+
+.model-select {
+  padding: 6px 10px;
+  border: 1px solid var(--gray-300);
+  border-radius: 8px;
+  background: var(--white);
+  color: var(--gray-900);
+  font-size: 0.85rem;
+  font-family: inherit;
+  cursor: pointer;
+  outline: none;
+  transition: all 0.2s ease;
+  max-width: 160px;
+}
+
+.model-select:hover {
+  border-color: var(--gray-500);
+}
+
+.model-select:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.1);
 }
 
 .icon-btn {
@@ -237,6 +265,10 @@ body {
   background: var(--gray-100);
   color: var(--gray-700);
   border-color: var(--gray-300);
+}
+
+.icon-btn .ti {
+  font-size: 20px;
 }
 
 /* Chat Box */
@@ -264,8 +296,19 @@ body {
 }
 
 .welcome-avatar {
-  font-size: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: var(--primary);
+  color: var(--white);
   flex-shrink: 0;
+}
+
+.welcome-avatar .ti {
+  font-size: 1.5rem;
 }
 
 .welcome-content h3 {
@@ -318,10 +361,15 @@ body {
   border-bottom-left-radius: 6px;
 }
 
+.message .ti {
+  vertical-align: -2px;
+  margin-right: 2px;
+}
+
 /* Chat Form */
 .chat-form {
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   gap: 12px;
   padding: 16px 24px;
   padding-bottom: calc(16px + env(safe-area-inset-bottom));
@@ -331,7 +379,10 @@ body {
 
 .input-wrapper {
   flex: 1;
-  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
 }
 
 .input-wrapper input {
@@ -350,6 +401,106 @@ body {
   border-color: var(--primary);
   background: var(--white);
   box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+}
+
+.file-preview {
+  display: none;
+  align-items: center;
+  align-self: flex-start;
+  gap: 6px;
+  width: auto;
+  max-width: 200px;
+  padding: 6px 8px;
+  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+  border: 1px solid var(--primary);
+  border-radius: 10px;
+  box-shadow: var(--shadow);
+  animation: slideDown 0.3s ease;
+}
+
+.file-preview.show {
+  display: flex;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.file-preview-header {
+  display: contents;
+}
+
+.file-name {
+  flex: 1;
+  min-width: 0;
+  font-size: 0.75rem;
+  color: var(--gray-900);
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.file-remove-btn {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: none;
+  background: var(--white);
+  color: var(--gray-500);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+  font-weight: bold;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.file-remove-btn:hover {
+  background: #ef4444;
+  color: var(--white);
+}
+
+.file-remove-btn .ti {
+  font-size: 12px;
+}
+
+.file-preview-body {
+  order: -1;
+  flex-shrink: 0;
+}
+
+.file-thumb {
+  width: 36px;
+  height: 36px;
+  border-radius: 6px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+}
+
+.file-preview--image .file-thumb img {
+  width: 36px;
+  height: 36px;
+  object-fit: cover;
+  display: block;
+}
+
+.file-icon {
+  font-size: 1.1rem;
+  line-height: 1;
 }
 
 .send-btn {
@@ -379,8 +530,10 @@ body {
   transform: translateY(0);
 }
 
-.send-btn svg {
+.send-btn svg,
+.send-btn .ti {
   flex-shrink: 0;
+  font-size: 20px;
 }
 
 /* Scrollbar */
@@ -488,6 +641,12 @@ body {
   .icon-btn {
     width: 32px;
     height: 32px;
+  }
+
+  .model-select {
+    max-width: 140px;
+    font-size: 0.8rem;
+    padding: 5px 8px;
   }
 }
 

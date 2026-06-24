@@ -6,42 +6,102 @@ const roomSubtitle = document.getElementById('room-subtitle');
 const clearBtn = document.getElementById('clear-chat');
 const uploadBtn = document.getElementById('upload-btn');
 const fileInput = document.getElementById('file-input');
+const filePreview = document.getElementById('file-preview');
+const previewFileName = document.getElementById('preview-file-name');
+const removeFileBtn = document.getElementById('remove-file-btn');
+const previewImage = document.getElementById('preview-image');
+const previewIcon = document.getElementById('preview-icon');
 const hamburger = document.getElementById('hamburger');
 const sidebar = document.getElementById('sidebar');
 const overlay = document.getElementById('sidebar-overlay');
+const modelSelect = document.getElementById('model-select');
 const roomItems = document.querySelectorAll('.room-item');
+const chatIcon = document.getElementById('chat-icon');
 
 const ROOMS = {
   general: {
     title: 'Chat Umum',
     subtitle: 'Tanya apa saja, AI akan menjawab',
     endpoint: '/generate-text',
-    welcome: 'Selamat datang di Chat Umum! Silakan tanyakan apa saja kepada Gemini AI.'
+    welcome: 'Silakan tanyakan apa saja kepada Gemini AI.',
+    icon: 'message-circle'
   },
   image: {
     title: 'Analisis Gambar',
     subtitle: 'Upload gambar dan minta AI menganalisis',
     endpoint: '/generate-from-image',
     welcome: 'Upload gambar dan beri prompt untuk dianalisis oleh Gemini AI.',
-    accept: 'image/*'
+    accept: 'image/*',
+    fileField: 'image',
+    icon: 'photo'
   },
   document: {
     title: 'Ringkasan Dokumen',
     subtitle: 'Upload dokumen untuk diringkas',
     endpoint: '/generate-from-document',
     welcome: 'Upload dokumen (PDF, DOC, TXT) untuk dibuatkan ringkasan.',
-    accept: '.pdf,.doc,.docx,.txt'
+    accept: '.pdf,.doc,.docx,.txt',
+    fileField: 'document',
+    icon: 'file-text'
   },
   audio: {
     title: 'Transkrip Audio',
     subtitle: 'Upload audio untuk ditranskrip',
     endpoint: '/generate-from-audio',
     welcome: 'Upload file audio untuk dibuatkan transkrip.',
-    accept: 'audio/*'
+    accept: 'audio/*',
+    fileField: 'audio',
+    icon: 'music'
   }
 };
 
 let currentRoom = 'general';
+let selectedModel = modelSelect.value;
+let pendingFile = null;
+let previewURL = null;
+
+modelSelect.addEventListener('change', () => {
+  selectedModel = modelSelect.value;
+});
+
+function icon(name) {
+  return `<i class="ti ti-${name}"></i>`;
+}
+
+function escapeHtml(text) {
+  const el = document.createElement('div');
+  el.textContent = text;
+  return el.innerHTML;
+}
+
+function getInputPlaceholder(roomKey) {
+  return roomKey === 'general' ? 'Ketik pesan Anda...' : 'Jelaskan kebutuhan Anda...';
+}
+
+function getFilePreviewType(file) {
+  if (file.type?.startsWith('image/') || currentRoom === 'image') return 'image';
+  if (file.type?.startsWith('audio/') || currentRoom === 'audio') return 'audio';
+  return 'file';
+}
+
+function getFileIconName(type) {
+  if (type === 'audio') return 'music';
+  if (type === 'file') return 'file-text';
+  return 'paperclip';
+}
+
+function clearFilePreview() {
+  pendingFile = null;
+  if (previewURL) {
+    URL.revokeObjectURL(previewURL);
+    previewURL = null;
+  }
+  previewImage.src = '';
+  previewImage.hidden = true;
+  previewIcon.className = 'ti file-icon';
+  previewIcon.hidden = true;
+  filePreview.className = 'file-preview';
+}
 
 function setRoom(roomKey) {
   currentRoom = roomKey;
@@ -53,10 +113,11 @@ function setRoom(roomKey) {
 
   roomTitle.textContent = room.title;
   roomSubtitle.textContent = room.subtitle;
+  chatIcon.innerHTML = icon(room.icon);
 
   chatBox.innerHTML = `
     <div class="welcome-message">
-      <div class="welcome-avatar">✨</div>
+      <div class="welcome-avatar">${icon('sparkles')}</div>
       <div class="welcome-content">
         <h3>Selamat datang di ${room.title}!</h3>
         <p>${room.welcome}</p>
@@ -64,30 +125,86 @@ function setRoom(roomKey) {
     </div>
   `;
 
-  input.placeholder = roomKey === 'general'
-    ? 'Ketik pesan Anda...'
-    : 'Jelaskan kebutuhan Anda...';
-
-  if (roomKey === 'general') {
-    uploadBtn.style.display = 'none';
-  } else {
-    uploadBtn.style.display = 'flex';
-    uploadBtn.title = `Upload ${room.accept ? room.accept.split(',').pop() : 'file'}`;
+  clearFilePreview();
+  input.placeholder = getInputPlaceholder(roomKey);
+  uploadBtn.style.display = roomKey === 'general' ? 'none' : 'flex';
+  if (room.accept) {
+    uploadBtn.title = `Upload ${room.accept.split(',').pop()}`;
   }
 }
 
-roomItems.forEach(item => {
-  item.addEventListener('click', () => {
-    const room = item.dataset.room;
-    if (room && ROOMS[room]) {
-      setRoom(room);
-    }
-  });
-});
+function showFilePreview(file) {
+  pendingFile = file;
+  previewFileName.textContent = file.name;
 
-clearBtn.addEventListener('click', () => {
-  setRoom(currentRoom);
-});
+  const type = getFilePreviewType(file);
+  filePreview.className = `file-preview show file-preview--${type}`;
+
+  if (type === 'image') {
+    if (previewURL) URL.revokeObjectURL(previewURL);
+    previewURL = URL.createObjectURL(file);
+    previewImage.src = previewURL;
+    previewImage.hidden = false;
+    previewIcon.hidden = true;
+  } else {
+    if (previewURL) {
+      URL.revokeObjectURL(previewURL);
+      previewURL = null;
+    }
+    previewImage.src = '';
+    previewImage.hidden = true;
+    previewIcon.className = `ti file-icon ti-${getFileIconName(type)}`;
+    previewIcon.hidden = false;
+  }
+
+  input.placeholder = `Ketik prompt untuk ${file.name}...`;
+  input.focus();
+}
+
+function appendMessage(sender, content, isHtml = false) {
+  chatBox.querySelector('.welcome-message')?.remove();
+
+  const msg = document.createElement('div');
+  msg.classList.add('message', sender);
+  if (isHtml) msg.innerHTML = content;
+  else msg.textContent = content;
+  chatBox.appendChild(msg);
+  chatBox.scrollTop = chatBox.scrollHeight;
+}
+
+function appendBotResponse(response, data) {
+  if (response.ok) {
+    appendMessage('bot', data.result);
+    return;
+  }
+
+  let iconName = 'alert-circle';
+  let fallback = 'Terjadi kesalahan';
+
+  if (response.status === 429) {
+    iconName = 'alert-triangle';
+    fallback = 'Kuota harian AI telah habis. Silakan coba lagi besok.';
+  } else if (response.status === 503) {
+    iconName = 'clock-exclamation';
+    fallback = 'Layanan AI sedang sibuk. Silakan coba lagi sebentar lagi.';
+  }
+
+  const text = data.message || fallback;
+  appendMessage('bot', `${icon(iconName)} ${escapeHtml(text)}`, true);
+}
+
+async function sendRequest(endpoint, options) {
+  try {
+    const response = await fetch(endpoint, options);
+    const data = await response.json();
+    appendBotResponse(response, data);
+  } catch (error) {
+    console.error('Error:', error);
+    appendMessage('bot', `${icon('wifi-off')} ${escapeHtml('Gagal terhubung ke server')}`, true);
+  }
+}
+
+clearBtn.addEventListener('click', () => setRoom(currentRoom));
 
 uploadBtn.addEventListener('click', () => {
   const room = ROOMS[currentRoom];
@@ -95,48 +212,20 @@ uploadBtn.addEventListener('click', () => {
   fileInput.click();
 });
 
-fileInput.addEventListener('change', async () => {
+fileInput.addEventListener('change', () => {
   const file = fileInput.files[0];
   if (!file) return;
-
-  const room = ROOMS[currentRoom];
-  const userMessage = input.value.trim() || 'Tolong proses file ini.';
-
-  appendMessage('user', `📎 ${file.name}`);
-  input.value = '';
-
-  const formData = new FormData();
-  formData.append(room.endpoint.includes('image') ? 'image' :
-                  room.endpoint.includes('document') ? 'document' : 'audio',
-                  file);
-  formData.append('prompt', userMessage);
-
-  try {
-    const response = await fetch(room.endpoint, {
-      method: 'POST',
-      body: formData
-    });
-
-    const data = await response.json();
-
-    if (response.ok) {
-      appendMessage('bot', data.result);
-    } else if (response.status === 429) {
-      appendMessage('bot', '⚠️ ' + (data.message || 'Kuota harian AI telah habis. Silakan coba lagi besok.'));
-    } else if (response.status === 503) {
-      appendMessage('bot', '😔 ' + (data.message || 'Layanan AI sedang sibuk. Silakan coba lagi sebentar lagi.'));
-    } else {
-      appendMessage('bot', 'Error: ' + (data.message || 'Terjadi kesalahan'));
-    }
-  } catch (error) {
-    console.error('Error:', error);
-    appendMessage('bot', 'Error: Gagal terhubung ke server');
-  }
-
+  showFilePreview(file);
   fileInput.value = '';
 });
 
-form.addEventListener('submit', async function (e) {
+removeFileBtn.addEventListener('click', () => {
+  clearFilePreview();
+  input.placeholder = getInputPlaceholder(currentRoom);
+  input.focus();
+});
+
+form.addEventListener('submit', async (e) => {
   e.preventDefault();
 
   const userMessage = input.value.trim();
@@ -144,53 +233,35 @@ form.addEventListener('submit', async function (e) {
 
   const room = ROOMS[currentRoom];
 
-  if (currentRoom !== 'general') {
-    appendMessage('user', userMessage + ' (menunggu file...)');
-  } else {
+  if (currentRoom !== 'general' && pendingFile) {
+    const fileToSend = pendingFile;
+    appendMessage(
+      'user',
+      `${icon('paperclip')} ${escapeHtml(fileToSend.name)}<br>${icon('message')} ${escapeHtml(userMessage)}`,
+      true
+    );
+    input.value = '';
+    clearFilePreview();
+
+    const formData = new FormData();
+    formData.append(room.fileField, fileToSend);
+    formData.append('prompt', userMessage);
+    formData.append('model', selectedModel);
+
+    await sendRequest(room.endpoint, { method: 'POST', body: formData });
+  } else if (currentRoom === 'general') {
     appendMessage('user', userMessage);
-  }
-  input.value = '';
+    input.value = '';
 
-  if (currentRoom === 'general') {
-    try {
-      const response = await fetch(room.endpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt: userMessage })
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        appendMessage('bot', data.result);
-      } else if (response.status === 429) {
-        appendMessage('bot', '⚠️ ' + (data.message || 'Kuota harian AI telah habis. Silakan coba lagi besok.'));
-      } else if (response.status === 503) {
-        appendMessage('bot', '😔 ' + (data.message || 'Layanan AI sedang sibuk. Silakan coba lagi sebentar lagi.'));
-      } else {
-        appendMessage('bot', 'Error: ' + (data.message || 'Terjadi kesalahan'));
-      }
-    } catch (error) {
-      console.error('Error:', error);
-      appendMessage('bot', 'Error: Gagal terhubung ke server');
-    }
+    await sendRequest(room.endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prompt: userMessage, model: selectedModel })
+    });
   } else {
-    appendMessage('bot', 'Gunakan tombol upload 📎 di sebelah kanan untuk mengirim file.');
+    appendMessage('bot', `${icon('upload')} Gunakan tombol upload untuk mengirim file.`, true);
   }
 });
-
-function appendMessage(sender, text) {
-  const welcome = chatBox.querySelector('.welcome-message');
-  if (welcome) {
-    welcome.remove();
-  }
-
-  const msg = document.createElement('div');
-  msg.classList.add('message', sender);
-  msg.textContent = text;
-  chatBox.appendChild(msg);
-  chatBox.scrollTop = chatBox.scrollHeight;
-}
 
 function openSidebar() {
   sidebar.classList.add('open');
@@ -203,20 +274,17 @@ function closeSidebar() {
 }
 
 hamburger.addEventListener('click', () => {
-  if (sidebar.classList.contains('open')) {
-    closeSidebar();
-  } else {
-    openSidebar();
-  }
+  sidebar.classList.contains('open') ? closeSidebar() : openSidebar();
 });
 
 overlay.addEventListener('click', closeSidebar);
 
 roomItems.forEach(item => {
   item.addEventListener('click', () => {
-    setRoom(item.dataset.room);
-    if (window.innerWidth <= 768) {
-      closeSidebar();
+    const room = item.dataset.room;
+    if (room && ROOMS[room]) {
+      setRoom(room);
+      if (window.innerWidth <= 768) closeSidebar();
     }
   });
 });
