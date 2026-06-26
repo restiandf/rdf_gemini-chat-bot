@@ -74,6 +74,46 @@ function escapeHtml(text) {
   return el.innerHTML;
 }
 
+function parseMarkdown(text) {
+  let html = text;
+  
+  // Escape HTML first to prevent XSS
+  html = html.replace(/&/g, '&')
+             .replace(/</g, '<')
+             .replace(/>/g, '>');
+  
+  // Convert headers (### Header)
+  html = html.replace(/^### (.+)$/gm, '<h3>$1</h3>');
+  html = html.replace(/^## (.+)$/gm, '<h2>$1</h2>');
+  html = html.replace(/^# (.+)$/gm, '<h1>$1</h1>');
+  
+  // Convert bold (**text**)
+  html = html.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+  
+  // Convert italic (*text*)
+  html = html.replace(/\*([^*]+)\*/g, '<em>$1</em>');
+  
+  // Convert horizontal rules (---)
+  html = html.replace(/^---$/gm, '<hr>');
+  
+  // Convert unordered lists
+  html = html.replace(/^\* (.+)$/gm, '<li>$1</li>');
+  html = html.replace(/(<li>.*<\/li>)/s, '<ul>$1</ul>');
+  html = html.replace(/<\/ul>\s*<ul>/g, '');
+  
+  // Convert numbered lists
+  html = html.replace(/^\d+\. (.+)$/gm, '<li>$1</li>');
+  
+  // Convert line breaks to <br> (but not for block elements)
+  html = html.replace(/\n/g, '<br>');
+  html = html.replace(/<\/h[1-6]><br>/g, '</h$1>');
+  html = html.replace(/<\/ul><br>/g, '</ul>');
+  html = html.replace(/<\/li><br>/g, '</li>');
+  html = html.replace(/<hr><br>/g, '<hr>');
+  
+  return html;
+}
+
 function getInputPlaceholder(roomKey) {
   return roomKey === 'general' ? 'Ketik pesan Anda...' : 'Jelaskan kebutuhan Anda...';
 }
@@ -161,13 +201,45 @@ function showFilePreview(file) {
   input.focus();
 }
 
+function showLoading() {
+  chatBox.querySelector('.welcome-message')?.remove();
+
+  const loading = document.createElement('div');
+  loading.id = 'loading-indicator';
+  loading.classList.add('message', 'bot', 'loading');
+  loading.innerHTML = `
+    <div class="loading-content">
+      <div class="loading-dots">
+        <span></span>
+        <span></span>
+        <span></span>
+      </div>
+      <span class="loading-text">Sedang menjawab...</span>
+    </div>
+  `;
+  chatBox.appendChild(loading);
+  chatBox.scrollTop = chatBox.scrollHeight;
+}
+
+function hideLoading() {
+  const loading = document.getElementById('loading-indicator');
+  if (loading) loading.remove();
+}
+
 function appendMessage(sender, content, isHtml = false) {
   chatBox.querySelector('.welcome-message')?.remove();
 
   const msg = document.createElement('div');
   msg.classList.add('message', sender);
-  if (isHtml) msg.innerHTML = content;
-  else msg.textContent = content;
+  
+  if (isHtml) {
+    msg.innerHTML = content;
+  } else if (sender === 'bot') {
+    msg.innerHTML = parseMarkdown(content);
+  } else {
+    msg.textContent = content;
+  }
+  
   chatBox.appendChild(msg);
   chatBox.scrollTop = chatBox.scrollHeight;
 }
@@ -193,8 +265,12 @@ function appendBotResponse(response, data) {
   appendMessage('bot', `${icon(iconName)} ${escapeHtml(text)}`, true);
 }
 
-async function sendRequest(endpoint, options) {
+async function sendRequest(endpoint, options = {}) {
   try {
+    if (options.body && !options.method) {
+      options.method = 'POST';
+    }
+
     const response = await fetch(endpoint, options);
     const data = await response.json();
     appendBotResponse(response, data);
@@ -253,11 +329,14 @@ form.addEventListener('submit', async (e) => {
     appendMessage('user', userMessage);
     input.value = '';
 
+    showLoading();
+
     await sendRequest(room.endpoint, {
-      method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ prompt: userMessage, model: selectedModel })
     });
+
+    hideLoading();
   } else {
     appendMessage('bot', `${icon('upload')} Gunakan tombol upload untuk mengirim file.`, true);
   }

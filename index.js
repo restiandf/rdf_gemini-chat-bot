@@ -58,8 +58,25 @@ function fileToInlineData(file) {
 }
 
 app.post('/generate-text', async (req, res) => {
-  const { prompt, model } = req.body;
-  await generateAndRespond(res, resolveModel(model), prompt);
+  const { prompt, model, temperature = 0.7 } = req.body;
+
+  const beautySystemInstruction = `
+Kamu adalah Beauty Advisor profesional dengan pengetahuan luas tentang skincare, makeup, body care, dan hair care.
+
+Tugas:
+- Jawab pertanyaan dengan jelas dan sopan.
+- Jika pertanyaan terkait kecantikan, berikan jawaban ahli.
+- Jika pertanyaan di luar kecantikan, tetap jawab secara informatif dan ramah.
+`;
+
+  await generateAndRespond(
+    res,
+    resolveModel(model),
+    [
+      { text: beautySystemInstruction, type: 'text' },
+      { text: prompt, type: 'text' }
+    ]
+  );
 });
 
 app.post('/generate-from-image', upload.single('image'), async (req, res) => {
